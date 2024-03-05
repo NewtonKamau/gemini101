@@ -1,19 +1,33 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 require("dotenv").config();
+const fs = require("fs");
 // Access your API key as an environment variable (see "Set up your API key" above)
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API);
 
 // ...
+// Converts local file information to a GoogleGenerativeAI.Part object.
+function fileToGenerativePart(path, mimeType) {
+  return {
+    inlineData: {
+      data: Buffer.from(fs.readFileSync(path)).toString("base64"),
+      mimeType
+    },
+  };
+}
 
+async function run() {
+  // For text-and-image input (multimodal), use the gemini-pro-vision model
+  const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
 
-async function run () {
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-    const prompt = "write a story about a magic backpack"
-    const result = await model.generateContent(prompt);
-    const response = await result.response  ;
-    console.log(response);
-    const text = await response.text();
-    console.log(text);
-    
+  const prompt = "What's different between these pictures?";
+  const imageParts = [
+    fileToGenerativePart("first_image.jpeg", "image/jpeg"),
+    fileToGenerativePart("second_image.jpeg", "image/jpeg"),
+  ];
+
+  const result = await model.generateContent([prompt, ...imageParts]);
+  const response = await result.response;
+  const text = response.text();
+  console.log(text);
 }
 run();
