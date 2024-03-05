@@ -1,33 +1,34 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 require("dotenv").config();
-const fs = require("fs");
 // Access your API key as an environment variable (see "Set up your API key" above)
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API);
 
 // ...
-// Converts local file information to a GoogleGenerativeAI.Part object.
-function fileToGenerativePart(path, mimeType) {
-  return {
-    inlineData: {
-      data: Buffer.from(fs.readFileSync(path)).toString("base64"),
-      mimeType
-    },
-  };
-}
+
 
 async function run() {
-  // For text-and-image input (multimodal), use the gemini-pro-vision model
-  const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+ const chat = model.startChat({
+    history: [
+      {
+        role: "user",
+        parts: "Hello, I have 2 dogs in my house.",
+      },
+      {
+        role: "model",
+        parts: "Great to meet you. What would you like to know?",
+      },
+    ],
+    generationConfig: {
+      maxOutputTokens: 100,
+    },
+  });
 
-  const prompt = "What's different between these pictures?";
-  const imageParts = [
-    fileToGenerativePart("first_image.jpeg", "image/jpeg"),
-    fileToGenerativePart("second_image.jpeg", "image/jpeg"),
-  ];
-
-  const result = await model.generateContent([prompt, ...imageParts]);
-  const response = await result.response;
-  const text = response.text();
-  console.log(text);
+  const msg = "How many paws are in my house?";
+    const result = await chat.sendMessage(msg);
+    const response = await result.response;
+    console.log(response);
+    const text = response.text;
+    console.log(text);
 }
 run();
